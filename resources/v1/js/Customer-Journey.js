@@ -995,7 +995,8 @@ const EventProcessor = (function (){
 
         fetch(url, options)
             .then(res=>res.json())
-            .then(result=>callback(result));
+            .then(result=>callback(result))
+            .catch(error=>callback(error));
     }
 
     function postReview(value){
