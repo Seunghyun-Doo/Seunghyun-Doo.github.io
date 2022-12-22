@@ -621,35 +621,40 @@ const EventProcessor = (function (){
     let serviceExplain;
 
     let _contentsId;
+    let _userKey;
+    let _bannerHistorySeq;
 
-    const linkInfoForInsurance={
-        setUrl(url){
-            insuranceUrl = url;
-        },
-        setName(name){
-            insuranceName = name;
-        },
-        setImgUrl(imgUrl){
-            insuranceImg = imgUrl;
-        },
-        setExplain(explain){
-            insuranceExplain = explain;
-        }
-    };
-    const linkInfoForService={
-        setUrl(url){
-            serviceUrl = url;
-        },
-        setName(name){
-            serviceName = name;
-        },
-        setImgUrl(imgUrl){
-            serviceImg = imgUrl;
-        },
-        setExplain(explain){
-            serviceExplain = explain;
-        }
-    };
+    function initSetting(params){
+        _contentsId = params.contentsId;
+        //user key 생성
+        createUserKey();
+        //css 전역변수 설정
+        setPropertiesForCss();
+        //피드백라디오(좋아요/싫어요) 기본이벤트처리
+        initSettingForReviewRadio(params.contentsId);
+        //gnb(헤더) 자동 숨기기 설정
+        setAutoHideGnb();
+        //bottom-sheet 추천상품정보 설정
+        const linkInfoForInsurance = params.linkInfoForInsurance;
+        insuranceUrl = linkInfoForInsurance.url;
+        insuranceImg = linkInfoForInsurance.imgUrl;
+        insuranceName = linkInfoForInsurance.name;
+        insuranceExplain = linkInfoForInsurance.explain;
+
+        const linkInfoForService = params.linkInfoForService;
+        serviceUrl = linkInfoForService.url;
+        serviceImg = linkInfoForService.imgUrl;
+        serviceName = linkInfoForService.name;
+        serviceExplain = linkInfoForService.explain;
+
+        //Bottom-sheet 생성
+        createBottomSheet();
+        // bottom-sheet 등장 자동/수동 설정
+        if(isAutoBottomStyle())
+            setAutoBottomSheetEvent();
+        else
+            setBottomSheetEvent();
+    }
 
     function setAutoHideGnb(){
         let isShowing = true;
@@ -679,6 +684,19 @@ const EventProcessor = (function (){
             }
             prevScrollY = window.scrollY;
         })
+    }
+    function createUserKey(){
+        let userKey = getLocalStorage('user-key', true);
+        if(userKey===null && _contentsId!==undefined) {
+            const currDate = new Date();
+            userKey = currDate.toLocaleDateString("ko-KR").replace(/[\s\.]/g,'');
+            userKey += currDate.toLocaleTimeString("en-GB").replace(/[\:]/g,'');
+            userKey += '-';
+            userKey += Date.now().toString(36);
+        }
+        if(userKey!==null){
+            setLocalStorage('user-key',userKey, 14, true);
+        }
     }
     function setGoNextAndFirstBtn(callbackForNext, callbackForPrev){
         const goNextBtn = document.querySelector('#goNextBtn');
@@ -711,16 +729,41 @@ const EventProcessor = (function (){
         [...document.querySelectorAll('[data-is-showing=processing]')].forEach(elem=>elem.dataset.isShowing='false');
     }
 
-    function trackingBottomSheetStyle() {
-        console.log('tracking bottom-sheet style==================');
-        console.log('isAutoBottomStyle : ', _isAutoBottomStyle);
+    function postBannerExposeInfo() {
+        const url = `/journey/form/banner-expose`;
+        const sendData = {
+            kywr_name:'테스트키워드'
+            , ctts_num: _contentsId // 콘텐츠아이디
+            , expr_lctn: _isAutoBottomStyle ? '001':'002' // 자동 : 수동
+            , expr_cmdt: _isLinkToInsurance ? '001':'002' // 보험 : 부가서비스
+            , expr_cmdt_name: getLinkInfos().linkName
+            , expr_link: getLinkInfos().linkUrl
+        };
+        postData(url, sendData, result=>{
+            console.log(result);
+            _bannerHistorySeq = result.hstr_srmb;
+        })
     }
 
-    function setAutoBottomSheetEvent(transformedTarget){
-        const feedbackArea = document.querySelector('#feedback-area');
-        if(transformedTarget!==undefined)
-            transformedElem = transformedTarget;
+    function postBannerClickInfo(href) {
+        const url = `/journey/form/banner-visit`;
+        const sendData = {
+            kywr_name:'테스트키워드'
+            , ctts_num: _contentsId // 콘텐츠아이디
+            , hstr_srmb: _bannerHistorySeq // 배너이력순번
+            , expr_lctn: _isAutoBottomStyle ? '001':'002' // 자동 : 수동
+            , expr_cmdt: _isLinkToInsurance ? '001':'002' // 보험 : 부가서비스
+            , expr_cmdt_name: getLinkInfos().linkName
+            , expr_link: getLinkInfos().linkUrl
+        };
+        postData(url, sendData, result=>{
+            console.log(result);
+            window.location.href=href;
+        })
+    }
 
+    function setAutoBottomSheetEvent(){
+        const feedbackArea = document.querySelector('#feedback-area');
         if(feedbackArea===null)
             return;
 
@@ -734,10 +777,8 @@ const EventProcessor = (function (){
                 if(targetScrollY===0)
                     targetScrollY = feedbackArea.offsetTop;
                 if(customerJourney._100vh*0.5 + window.scrollY > targetScrollY){
-                    scrollToEndOfFeedbackArea();
-                    //(무)교보마이핏(Fit)건강보험(DM)
-                    showBottomSheet(trackingBottomSheetStyle);
-
+                    scrollToEndOfFeedbackArea();    // 화면을 피드백영역 하단으로 자동 스크롤
+                    showBottomSheet(postBannerExposeInfo); // 바텀시트 등장
                     //한번만 동작하도록 이벤츠해제
                     window.removeEventListener('scroll',handler);
                 }
@@ -749,14 +790,6 @@ const EventProcessor = (function (){
         const feedbackArea = document.querySelector('#feedback-area');
         const scrollValue = feedbackArea.offsetHeight - (customerJourney._100vh - (feedbackArea.offsetTop-window.scrollY))
                             -60;
-        // let {translateX, translateY} = getTransformInfo();
-
-        // transformedElem.style.transition='transform 0.4s';
-        //
-        // orgTranslateY = translateY;
-        // orgTranslateX = translateX;
-        // translateY -= scrollValue;
-        // transformedElem.style.transform=`translate(${translateX}px, ${translateY}px)`;
 
         document.body.style.transition=`margin 0.4s`;
         document.body.style.marginTop=`-${scrollValue}px`;
@@ -779,57 +812,42 @@ const EventProcessor = (function (){
         return {linkUrl, linkImg, linkName, linkExplain};
     }
 
-    function getTransformInfo(){
-        const transformProps = window.getComputedStyle(transformedElem).transform.match(/\-?\d+\.?\d?/g);
-        let translateX=0;
-        let translateY=0;
-        if(transformProps!==null) {
-            translateX = transformProps[4];
-            translateY = transformProps[5];
-        }
-        return {translateX, translateY};
-    }
-
-    function handleScrollLock(bLock) {
+    function handleScrollLock() {
         document.documentElement.classList.toggle('overflow-y-hidden');
         document.body.classList.toggle('overflow-y-hidden');
         // document.querySelector('.main-wrapper').classList.toggle('overflow-y-hidden');
     }
 
-    function showBottomSheet(callBackFunc) {
-        if(document.querySelector("#dimmed-bottom-sheet")!==null)
-            return;
+    function createDimmedScreen(){
+        const dimmed = document.createElement('div');
+        dimmed.setAttribute('class', 'dimmed');
+        document.body.appendChild(dimmed);
+    }
 
+    function createBottomSheet() {
         const linkInfos = getLinkInfos(); //링크정보 불러오기
 
-        const dimmedBottomSheet = document.createElement('div');
-        dimmedBottomSheet.setAttribute('id','dimmed-bottom-sheet');
-        dimmedBottomSheet.setAttribute('class','fc-1');
-
-        const dimmed = document.createElement('div');
-        dimmed.setAttribute('class','dimmed');
-
         const bottomSheet = document.createElement('div');
-        bottomSheet.setAttribute('class','bottom-sheet hide');
+        bottomSheet.setAttribute('class', 'bottom-sheet fc-1 hide');
 
         const headline = document.createElement('div');
-        headline.setAttribute('class','headline');
+        headline.setAttribute('class', 'headline');
 
         const titleMsg = document.createElement('h4');
-        titleMsg.setAttribute('class','fw-700');
-        titleMsg.textContent='이런 상품 어떠세요?'
+        titleMsg.setAttribute('class', 'fw-700');
+        titleMsg.textContent = '이런 상품 어떠세요?'
 
         const closeBtn = document.createElement('a');
 
         const closeBtnMsg = document.createElement('span');
-        closeBtnMsg.setAttribute('class','display-none');
-        closeBtnMsg.textContent='닫기';
+        closeBtnMsg.style.display='none';
+        closeBtnMsg.textContent = '닫기';
 
         const closeBtnImg = document.createElement('img');
-        closeBtnImg.setAttribute('src','/resources/v1/img/ico-30-svg-close-b.svg');
+        closeBtnImg.setAttribute('src', '/resources/v1/img/ico-30-svg-close-b.svg');
 
         const recommendBox = document.createElement('div');
-        recommendBox.setAttribute('class','recommend-product text-align-center');
+        recommendBox.setAttribute('class', 'recommend-product text-align-center');
 
         const recommendImg = document.createElement('img');
         recommendImg.setAttribute('src', linkInfos.linkImg);
@@ -837,25 +855,29 @@ const EventProcessor = (function (){
         recommendImg.setAttribute('class', 'mt-10');
 
         const recommendName = document.createElement('h4');
-        recommendName.setAttribute('class','mt-10 fw-700');
-        recommendName.textContent=linkInfos.linkName;
+        recommendName.setAttribute('class', 'mt-10 fw-700');
+        recommendName.textContent = linkInfos.linkName;
 
         const recommendExplain = document.createElement('p');
-        recommendExplain.setAttribute('class','mt-10 mb-20 fs-7 fc-3');
-        recommendExplain.textContent=linkInfos.linkExplain;
+        recommendExplain.setAttribute('class', 'mt-10 mb-20 fs-7 fc-3');
+        recommendExplain.textContent = linkInfos.linkExplain;
 
         const kyoboLink = document.createElement('a');
         kyoboLink.setAttribute('href', linkInfos.linkUrl);
-        kyoboLink.setAttribute('class','text-align-center fw-700 fs-6 mt-10 fc-2')
-        kyoboLink.textContent='더 알아보기';
+        kyoboLink.setAttribute('class', 'text-align-center fw-700 fs-6 mt-10 fc-2')
+        kyoboLink.textContent = '더 알아보기';
+        kyoboLink.addEventListener('click',e=>{
+            e.preventDefault();
+            postBannerClickInfo(linkInfos.linkUrl);
+        })
 
         const arrowImg = document.createElement('img');
-        arrowImg.setAttribute('src','/resources/v1/img/ico-12-arrow-g.svg');
+        arrowImg.setAttribute('src', '/resources/v1/img/ico-12-arrow-g.svg');
 
         //bottomsheet 타이틀 생성
         closeBtn.appendChild(closeBtnMsg);
         closeBtn.appendChild(closeBtnImg);
-        closeBtn.addEventListener('click',e=>{
+        closeBtn.addEventListener('click', e => {
             e.preventDefault();
             closeBottomSheet();
         })
@@ -874,17 +896,21 @@ const EventProcessor = (function (){
         bottomSheet.appendChild(headline);
         bottomSheet.appendChild(recommendBox);
         bottomSheet.appendChild(kyoboLink);
-
-        //dimmed bottom sheet
-        dimmedBottomSheet.appendChild(dimmed);
-        dimmedBottomSheet.appendChild(bottomSheet);
-
-        document.body.appendChild(dimmedBottomSheet);
-
-        bottomSheet.addEventListener('transitionend', ()=>{
+        bottomSheet.addEventListener('transitionend', () => {
             //scroll 잠그기
-            handleScrollLock(true);
+            handleScrollLock();
         });
+
+        document.body.appendChild(bottomSheet);
+    }
+
+    function showBottomSheet(callBackFunc) {
+        const bottomSheet = document.querySelector(".bottom-sheet");
+        if(bottomSheet===null || !bottomSheet.classList.contains('hide'))
+            return;
+
+        //dimmed screen 생성
+        createDimmedScreen();
         //bottom-sheet 숨기기 해제
         window.setTimeout(()=>bottomSheet.classList.toggle('hide')
             ,100);
@@ -897,15 +923,18 @@ const EventProcessor = (function (){
         }
     }
     function closeBottomSheet(){
-        if(document.querySelector("#dimmed-bottom-sheet")===null)
+        if(document.querySelector(".bottom-sheet")===null)
             return;
 
         // 자동스크롤(TranslateY)된 Body(배경) 요소 복구
         // transformedElem.style.transform=`translate(${orgTranslateX}px, ${orgTranslateY}px)`;
         document.body.style.marginTop='';
 
-        const bottomSheet = document.querySelector("#dimmed-bottom-sheet .bottom-sheet");
-        bottomSheet.addEventListener('transitionend', ()=>document.querySelector("#dimmed-bottom-sheet").remove());
+        const bottomSheet = document.querySelector(".bottom-sheet");
+        bottomSheet.addEventListener('transitionend',()=> {
+            if(bottomSheet.classList.contains('hide'))
+                document.querySelector('.dimmed').remove();
+        });
         bottomSheet.classList.toggle('hide');
     }
 
@@ -924,7 +953,7 @@ const EventProcessor = (function (){
         if(document.querySelector('input#feedback-radio-01')===null)
             return;
         document.querySelector('input#feedback-radio-01').addEventListener(
-            'change', ()=>showBottomSheet(trackingBottomSheetStyle)
+            'change', ()=>showBottomSheet(postBannerExposeInfo)
         );
     }
 
@@ -979,41 +1008,50 @@ const EventProcessor = (function (){
         postData(url, sendData, result=>{console.log(result)})
     }
 
-    function removeLocalStorage(key){
-        let localData = localStorage.getItem(_contentsId);
+    function removeLocalStorage(key, isGlobal=false){
+        let localData = localStorage.getItem(isGlobal? key:_contentsId);
         if (localData===null)
             return;
         localData = JSON.parse(localData);
+        localData = isGlobal? localData : localData[key];
 
-        if(localData[key]!==undefined)
-            delete localData[key];
+        if(localData!==undefined)
+            delete localData;
 
-        localStorage.setItem(_contentsId, JSON.stringify(localData));
+        localStorage.setItem(isGlobal? key:_contentsId, JSON.stringify(localData));
     }
 
-    function setLocalStorage(key, value, period) {
-        let localData = localStorage.getItem(_contentsId);
-        localData = (localData===null? {} : JSON.parse(localData));
-        localData[key] = {
+    function setLocalStorage(key, value, period, isGlobal=false) {
+        const expiry = new Date(Date.now() + (period * 24 * 3600 * 1000))
+            .toLocaleDateString().replace(/\s/g, '');
+        const inputData = {
             value: value,
-            expiry : new Date(Date.now()+(period*24*3600*1000))
-                .toLocaleDateString().replace(/\s/g,'')
+            expiry: expiry
+        };
+        let localData;
+        if(isGlobal){
+            localData = inputData;
+        }else {
+            localData = localStorage.getItem(_contentsId);
+            localData = (localData === null ? {} : JSON.parse(localData));
+            localData[key] = inputData;
         }
-        localStorage.setItem(_contentsId, JSON.stringify(localData));
+        localStorage.setItem(isGlobal? key:_contentsId, JSON.stringify(localData));
     }
 
-    function getLocalStorage(key) {
-        let localData = localStorage.getItem(_contentsId);
+    function getLocalStorage(key,isGlobal=false) {
+        let localData = localStorage.getItem(isGlobal? key:_contentsId);
         if(localData===null)
             return null;
         localData = JSON.parse(localData);
+        localData = isGlobal? localData : localData[key];
         const currDate = new Date().toLocaleDateString().replace(/\s/g,'');
 
-        if(localData[key]===undefined || currDate>=localData[key].expiry) {
+        if(localData===undefined || currDate>=localData.expiry) {
             removeLocalStorage(key);
             return null;
         }
-        return localData[key].value;
+        return localData.value;
     }
 
     function initSettingForReviewRadio(contentsId, radios){
@@ -1043,7 +1081,6 @@ const EventProcessor = (function (){
         window.addEventListener('resize',_setPropertiesForCss);
     }
     return {setAutoHideGnb, setGoNextAndFirstBtn, isAutoBottomStyle, setAutoBottomSheetEvent
-        , setBottomSheetEvent, setPropertiesForCss, linkInfoForInsurance, linkInfoForService
-        , getResultOfSurvey, togglePageContents
-        , initSettingForReviewRadio}
+        , setBottomSheetEvent, setPropertiesForCss, getResultOfSurvey, togglePageContents
+        , initSetting}
 })();
