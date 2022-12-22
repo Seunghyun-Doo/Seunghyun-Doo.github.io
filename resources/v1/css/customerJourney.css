@@ -74,6 +74,11 @@
     display: flex;
     justify-content: center;
 }
+.swiper-container.last-slide{
+    position: absolute;
+    left: 15px;
+    right: 15px;
+}
 .swiper-container .swiper-pagination{
     display: block;
     position: initial;
@@ -81,10 +86,10 @@
 .swiper-my-bullet{
     display: inline-block;
     background: white;
-    opacity: 0.3;
-    width: 8px;
-    height: 8px;
-    margin: 0 4px;
+    opacity: 0.2;
+    width: 6px;
+    height: 6px;
+    margin: 0 5px 0 0;
     border-radius: 50%;
 }
 h1,h2,h3,h4,h5{
@@ -349,9 +354,6 @@ body.type-a .bg-2{
 body.type-a .bg-3{
     background: #387c90;
 }
-body.type-b{
-    color:white;
-}
 body.type-c{
     color:white;
     background: #7156A8;
@@ -434,6 +436,9 @@ li{
 .bg-white{
     background: white;
 }
+.bg-black{
+    background: black;
+}
 .bg-1{
     background: #27809e;
 }
@@ -489,7 +494,7 @@ li{
     border: 1px solid #d95584;
 }
 .fc-white{
-    color: white;
+    color: white !important;
 }
 .transition-opacity{
     transition: opacity 0.5s;
@@ -861,8 +866,12 @@ section:last-of-type article{
 ._7D_003 .tag{
     color: #194078;
 }
-._3A_004 .tag{
+._3A_004 .tag,
+._3A_024 .tag{
     color: #166c78;
+}
+._13C_031 .tag{
+    color: #412990;
 }
 .head-msg{
     font-size: 1.375em;
@@ -884,6 +893,9 @@ section:last-of-type article{
     box-shadow: 0 10px 10px 0 rgba(0, 0, 0, 0.1);
     margin-left: 5px;
     margin-right: 5px;
+}
+._3A_024 .main-banner-wrapper{
+    padding: 50px 10px;
 }
 ._6B_019 .main-banner-wrapper{
     padding: 38px 10px 44px;
@@ -982,25 +994,56 @@ section:last-of-type article{
 ._6F_007 #answer-02:checked~.main-banner-wrapper .radio-btn-box label{
     padding-top: 15px;
 }
-.information-type.type-b .main-banner-wrapper{
-    height: 340px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+._13C_031 article:first-of-type{
+    padding-bottom: 75px;
+}
+._13C_031 .main-banner-wrapper{
+    padding: 52px 10px 20px;
+    height: 278px;
+}
+._13C_031 h3{
+    color: #b13e7d;
+}
+._13C_031 .main-banner-wrapper .section-no{
+    font-style: italic;
+    font-size: 33px;
 }
 .type-b .swiper-slide .main-banner-wrapper img{
     max-width: 380px;
     margin: 0 auto;
 }
-.type-b .swiper-slide .main-banner-wrapper img:last-of-type{
-    position: absolute;
-    top: 10px;
-    right: 20px;
-}
 .type-b .swiper-slide .main-banner-wrapper h1{
     font-size: 40px;
     font-style: italic;
     color: #6a50c2;
+}
+.swiper-slide .first-slide{
+    display: flex;
+    flex-direction: column;
+}
+.swiper-slide .first-slide .title{
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+.swiper-slide .first-slide .title .half-line{
+    position: absolute;
+    top:50%;
+    left: 15px;
+    right: 15px;
+    height:2px;
+    transform: translateY(-50%);
+    z-index: 0;
+
+}
+.swiper-slide .first-slide .title .title-msg{
+    z-index: 1;
+    position: relative;
+    display: inline-block;
+    padding: 0 15px;
 }
 .main-banner-wrapper .bg-image{
     position: absolute;
@@ -1336,6 +1379,9 @@ section .title-msg .section-no.center-style{
     white-space: nowrap;
     overflow: hidden;
 }
+.underline{
+    text-decoration: underline;
+}
 .strong-underline{
     line-height: 1.4;
     background: linear-gradient(0deg,rgba(0,0,0,0.2) 40%,transparent 20%);
@@ -1415,11 +1461,18 @@ section .title-msg .section-no.center-style{
 ._3A_004 #feedback-area{
     background: #214252;
 }
+._3A_024 #feedback-area{
+    background: #172C36;
+}
 ._7E_006 #feedback-area{
     background: #be4872;
 }
+._13C_031 #feedback-area{
+    background: #473c8d;
+}
 #feedback-area{
     padding-bottom: 350px;
+    color: white;
 }
 .feedback-btn-box{
     display: flex;
@@ -1461,7 +1514,7 @@ input[type='radio'][name='feedback-radio']:checked+.feedback-btn{
 }
 .bottom-sheet{
     position: fixed;
-    z-index: 15;
+    z-index: 20;
     bottom: 0;
     left: 0;
     right: 0;
@@ -1494,4 +1547,8 @@ input[type='radio'][name='feedback-radio']:checked+.feedback-btn{
 }
 .bottom-sheet a img{
     margin-left: 5px;
+}
+.checkbox{
+    transform: translateY(4px);
+    margin-right: 4px;
 }
