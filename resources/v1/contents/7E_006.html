@@ -255,8 +255,30 @@
         //onLoad animation 세팅
         customerJourney.setElemsAniOnLoad();
 
-        //콘텐츠평가 불러오기 & 이벤트처리
-        EventProcessor.initSettingForReviewRadio('7E_006');
+        //컴포넌트 이벤트 및 기본설정
+        EventProcessor.initSetting({
+            contentsId : '7E_006',  //콘텐츠id
+            linkInfoForInsurance : {
+                //상품 링크 url
+                url : 'https://www.kyobo.com/dgt/web/dtp/insurance-detail?isPdtCd=1000922&evcode=DCJ_MO',
+                //상품명
+                name : '(무)교보마이핏(Fit)건강보험(DM)',
+                //상품 이미지 url
+                imgUrl : '/resources/v1//img/img-product-svg-health-life.svg',
+                //상품 설명
+                explain : '꼭 필요한 보장만으로 보험가입 OK!'
+            },
+            linkInfoForService : {
+                //부가서비스 링크 url
+                url : 'https://www.kyobo.com/dgt/web/product/healthBasic-service',
+                //부가서비스명
+                name : '교보헬스케어서비스Basic II',
+                //부가서비스 이미지 url
+                imgUrl : '/resources/v1/img/img-service-svg-healthcare-basic.svg',
+                //부가서비스 설명
+                explain : '꼭 필요한 것만 담은 똑똑한 건강가이드'
+            }
+        });
 
         //확인하기 버튼 활성화 처리
         [...document.querySelectorAll('.survey-form input[type="radio"]')].forEach(elem=>
@@ -267,26 +289,6 @@
             })
         );
 
-        //상품 링크 url
-        EventProcessor.linkInfoForInsurance.setUrl('https://www.kyobo.com/dgt/web/dtp/insurance-detail?isPdtCd=1000922');
-        //상품명
-        EventProcessor.linkInfoForInsurance.setName('(무)교보마이핏(Fit)건강보험(DM)');
-        //상품 이미지 url
-        EventProcessor.linkInfoForInsurance.setImgUrl('/resources/v1/img/img-product-svg-health-life.svg');
-        //상품 설명
-        EventProcessor.linkInfoForInsurance.setExplain('꼭 필요한 보장만으로 보험가입 OK!');
-
-        //부가서비스 링크 url
-        EventProcessor.linkInfoForService.setUrl('https://www.kyobo.com/dgt/web/product/healthBasic-service');
-        //부가서비스명
-        EventProcessor.linkInfoForService.setName('교보헬스케어서비스Basic II');
-        //부가서비스 이미지 url
-        EventProcessor.linkInfoForService.setImgUrl('/resources/v1/img/img-service-svg-healthcare-basic.svg');
-        //부가서비스 설명
-        EventProcessor.linkInfoForService.setExplain('꼭 필요한 것만 담은 똑똑한 건강가이드');
-
-        EventProcessor.setPropertiesForCss();
-        EventProcessor.setAutoHideGnb();
         EventProcessor.setGoNextAndFirstBtn(()=>{
                 // 결과페이지 애니메이션 함수
                 const index = [...document.querySelectorAll('.survey-form input[type="radio"]')]
@@ -311,13 +313,7 @@
                 window.setTimeout(()=>[...document.querySelectorAll('#result-area .result')]
                         .forEach(div=>div.classList.add('display-none'))
                     , 0);
-            });
-
-        if(EventProcessor.isAutoBottomStyle())
-            //bottom sheet 등장 시 오토스크롤 위한 body대신 배경 main요소 대체
-            EventProcessor.setAutoBottomSheetEvent(document.querySelector('.main-wrapper'));
-        else
-            EventProcessor.setBottomSheetEvent();
+        });
     </script>
 </body>
 </html>

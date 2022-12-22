@@ -347,8 +347,30 @@
         // customerJourney.loadElementsToAnimate();
         customerJourney.setElemsAniOnLoad();
 
-        //콘텐츠평가 불러오기 & 이벤트처리
-        EventProcessor.initSettingForReviewRadio('2D_015');
+        //컴포넌트 이벤트 및 기본설정
+        EventProcessor.initSetting({
+            contentsId : '2D_015',  //콘텐츠id
+            linkInfoForInsurance : {
+                //상품 링크 url
+                url : 'https://www.kyobo.com/dgt/web/dtp/insurance-detail?isPdtCd=1000938&evcode=DCJ_MO',
+                //상품명
+                name : '(무)교보시작해요저축보험',
+                //상품 이미지 url
+                imgUrl : '/resources/v1/img/img-product-svg-saving.svg',
+                //상품 설명
+                explain : '소액으로 차근차근 오늘부터 시작해요'
+            },
+            linkInfoForService : {
+                //부가서비스 링크 url
+                url : 'https://www.kyobo.com/dgt/web/customer/service/assets-management',
+                //부가서비스명
+                name : '자산관리서비스',
+                //부가서비스 이미지 url
+                imgUrl : '/resources/v1/img/img-service-svg-finance-manage.svg',
+                //부가서비스 설명
+                explain : '소중한 자산을 든든하게 관리해주는 서비스'
+            }
+        });
 
         //설문조사 결과 조회
         EventProcessor.getResultOfSurvey('2D_015', json=>{
@@ -378,26 +400,6 @@
             window.setTimeout(()=>list[1].style.transform='translateX(-50%)', 300);
         });
 
-        //상품 링크 url
-        EventProcessor.linkInfoForInsurance.setUrl('https://www.kyobo.com/dgt/web/dtp/insurance-detail?isPdtCd=1000938');
-        //상품명
-        EventProcessor.linkInfoForInsurance.setName('(무)교보시작해요저축보험');
-        //상품 이미지 url
-        EventProcessor.linkInfoForInsurance.setImgUrl('/resources/v1/img/img-product-svg-saving.svg');
-        //상품 설명
-        EventProcessor.linkInfoForInsurance.setExplain('소액으로 차근차근 오늘부터 시작해요');
-
-        //부가서비스 링크 url
-        EventProcessor.linkInfoForService.setUrl('https://www.kyobo.com/dgt/web/customer/service/assets-management');
-        //부가서비스명
-        EventProcessor.linkInfoForService.setName('자산관리서비스');
-        //부가서비스 이미지 url
-        EventProcessor.linkInfoForService.setImgUrl('/resources/v1/img/img-service-svg-finance-manage.svg');
-        //부가서비스 설명
-        EventProcessor.linkInfoForService.setExplain('소중한 자산을 든든하게 관리해주는 서비스');
-
-        EventProcessor.setPropertiesForCss();
-        EventProcessor.setAutoHideGnb();
         EventProcessor.setGoNextAndFirstBtn(()=>{
                 // 결과페이지 애니메이션 함수
                 const index = [...document.querySelectorAll('.survey-form input[type="radio"]')]
@@ -424,11 +426,6 @@
                     [...document.querySelectorAll('.li-item-result')].forEach(li => li.classList.remove('active'));
                 }, 0);
             });
-        if(EventProcessor.isAutoBottomStyle())
-            //bottom sheet 등장 시 오토스크롤 위한 body대신 배경 main요소 대체
-            EventProcessor.setAutoBottomSheetEvent(document.querySelector('.main-wrapper'));
-        else
-            EventProcessor.setBottomSheetEvent();
     </script>
 </body>
 </html>
