@@ -1,10 +1,122 @@
+class Calculation {
+    constructor() {
+        this._symbols = {};
+        this.defineOperator("!", this.factorial,      "postfix", 6);
+        this.defineOperator("^", Math.pow,            "infix",   5, true);
+        this.defineOperator("*", this.multiplication, "infix",   4);
+        this.defineOperator("/", this.division,       "infix",   4);
+        this.defineOperator("+", this.last,           "prefix",  3);
+        this.defineOperator("-", this.negation,       "prefix",  3);
+        this.defineOperator("+", this.addition,       "infix",   2);
+        this.defineOperator("-", this.subtraction,    "infix",   2);
+        this.defineOperator(",", Array.of,            "infix",   1);
+        this.defineOperator("(", this.last,           "prefix");
+        this.defineOperator(")", null,                "postfix");
+        this.defineOperator("min", Math.min);
+        this.defineOperator("sqrt", Math.sqrt);
+    }
+    // Method allowing to extend an instance with more operators and functions:
+    defineOperator(symbol, f, notation = "func", precedence = 0, rightToLeft = false) {
+        // Store operators keyed by their symbol/name. Some symbols may represent
+        // different usages: e.g. "-" can be unary or binary, so they are also
+        // keyed by their notation (prefix, infix, postfix, func):
+        if (notation === "func") precedence = 0;
+        this._symbols[symbol] = Object.assign({}, this._symbols[symbol], {
+            [notation]: {
+                symbol, f, notation, precedence, rightToLeft,
+                argCount: 1 + (notation === "infix")
+            },
+            symbol,
+            regSymbol: symbol.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&')
+                + (/\w$/.test(symbol) ? "\\b" : "") // add a break if it's a name
+        });
+    }
+    last(...a)           { return a[a.length-1] }
+    negation(a)          { return -a }
+    addition(a, b)       { return a + b }
+    subtraction(a, b)    { return a - b }
+    multiplication(a, b) { return a * b }
+    division(a, b)       { return a / b }
+    factorial(a) {
+        if (a%1 || !(+a>=0)) return NaN
+        if (a > 170) return Infinity;
+        let b = 1;
+        while (a > 1) b *= a--;
+        return b;
+    }
+    calculate(expression) {
+        let match;
+        const values = [],
+            operators = [this._symbols["("].prefix],
+            exec = _ => {
+                let op = operators.pop();
+                values.push(op.f(...[].concat(...values.splice(-op.argCount))));
+                return op.precedence;
+            },
+            error = msg => {
+                let notation = match ? match.index : expression.length;
+                return `${msg} at ${notation}:\n${expression}\n${' '.repeat(notation)}^`;
+            },
+            pattern = new RegExp(
+                // Pattern for numbers
+                "\\d+(?:\\.\\d+)?|"
+                // ...and patterns for individual operators/function names
+                + Object.values(this._symbols)
+                    // longer symbols should be listed first
+                    .sort( (a, b) => b.symbol.length - a.symbol.length )
+                    .map( val => val.regSymbol ).join('|')
+                + "|(\\S)", "g"
+            );
+        let afterValue = false;
+        pattern.lastIndex = 0; // Reset regular expression object
+        do {
+            match = pattern.exec(expression);
+            const [token, bad] = match || [")", undefined],
+                notNumber = this._symbols[token],
+                notNewValue = notNumber && !notNumber.prefix && !notNumber.func,
+                notAfterValue = !notNumber || !notNumber.postfix && !notNumber.infix;
+            // Check for syntax errors:
+            if (bad || (afterValue ? notAfterValue : notNewValue)) return error("Syntax error");
+            if (afterValue) {
+                // We either have an infix or postfix operator (they should be mutually exclusive)
+                const curr = notNumber.postfix || notNumber.infix;
+                do {
+                    const prev = operators[operators.length-1];
+                    if (((curr.precedence - prev.precedence) || prev.rightToLeft) > 0) break;
+                    // Apply previous operator, since it has precedence over current one
+                } while (exec()); // Exit loop after executing an opening parenthesis or function
+                afterValue = curr.notation === "postfix";
+                if (curr.symbol !== ")") {
+                    operators.push(curr);
+                    // Postfix always has precedence over any operator that follows after it
+                    if (afterValue) exec();
+                }
+            } else if (notNumber) { // prefix operator or function
+                operators.push(notNumber.prefix || notNumber.func);
+                if (notNumber.func) { // Require an opening parenthesis
+                    match = pattern.exec(expression);
+                    if (!match || match[0] !== "(") return error("Function needs parentheses")
+                }
+            } else { // number
+                values.push(+token);
+                afterValue = true;
+            }
+        } while (match && operators.length);
+        return operators.length ? error("Missing closing parenthesis")
+            : match ? error("Too many closing parentheses")
+                : values.pop() // All done!
+    }
+};
+
 const customerJourney=(function (){
 
     let idxForTriggerElem = 1;
-    let _100vh = get100VhSize();
+    let _100vh = document.documentElement.clientHeight;
     let onScrollAnimationInfos = [];
     let animationElements = {};
     let customFunctionList = [];
+
+    let calculation = new Calculation();
 
    function loadElementsToAnimate(onScroll){
       const aniElems = [...document.querySelectorAll('*')].filter(elem=>{
@@ -408,7 +520,7 @@ const customerJourney=(function (){
                        if(params.length>=2)
                            formula=params[1];
                    }
-                   let result = formula===undefined? offset : eval(offset+formula);
+                   let result = formula===undefined? offset : calculation.calculate(offset+formula);
                    result += (suffix===undefined? '':suffix);
                    return result;
                }
@@ -436,7 +548,7 @@ const customerJourney=(function (){
                        if(params.length>=2)
                            formula=params[1];
                    }
-                   let result = formula===undefined? offset : eval(offset+formula);
+                   let result = formula===undefined? offset : calculation.calculate(offset+formula);
                    result += (suffix===undefined? '':suffix);
                    return result;
                }
@@ -453,6 +565,10 @@ const customerJourney=(function (){
                }
            }
        ];
+   }
+
+   function set100vh(new100vh){
+        _100vh = new100vh;
    }
 
    function convertFunctionValue(str, targetElement){
@@ -597,7 +713,7 @@ const customerJourney=(function (){
             triggerHook = parseFloat(slide.dataset.animationInfos.match(/trigger-hook\s*:.*?([\d\.]+)/)[1]);
         slide.dataset.animationInfos += `, scroll-duration: '${_100vh}'`;
     })
-    return {createImageSlides, loadElementsToAnimate, addEventToStars, addEventToTextArea, setElemsAniOnLoad, setElemsAniOnScroll, _100vh};
+    return {createImageSlides, loadElementsToAnimate, addEventToStars, addEventToTextArea, setElemsAniOnLoad, setElemsAniOnScroll, set100vh};
 }());
 
 const EventProcessor = (function (){
@@ -620,20 +736,26 @@ const EventProcessor = (function (){
     let serviceName;
     let serviceExplain;
 
+    let _searchKeyword;
     let _contentsId;
     let _userKey;
     let _bannerHistorySeq;
 
     function initSetting(params){
-        _contentsId = params.contentsId;
-        //user key 생성
-        createUserKey();
-        //css 전역변수 설정
-        setPropertiesForCss();
-        //피드백라디오(좋아요/싫어요) 기본이벤트처리
-        initSettingForReviewRadio(params.contentsId);
-        //gnb(헤더) 자동 숨기기 설정
-        setAutoHideGnb();
+        //교보문고 검색어
+        _searchKeyword = document.querySelector('#srch_kywr_name').value;
+        //콘텐츠 아이디
+        _contentsId = document.querySelector('#csjr_ctts_num').value;
+        if(_contentsId==null || _contentsId==='')
+            _contentsId = params.contentsId;
+        _contentsId.replace('.html','');
+
+        createUserKey(); //user key 생성
+        setPropertiesForCss(); //css 전역변수 설정
+        initSettingForReviewRadio(params.contentsId); //피드백라디오(좋아요/싫어요) 기본이벤트처리
+        setAutoHideGnb(); //gnb(헤더) 자동 숨기기 설정
+        initSettingForSubmitSurvey();
+
         //bottom-sheet 추천상품정보 설정
         const linkInfoForInsurance = params.linkInfoForInsurance;
         insuranceUrl = linkInfoForInsurance.url;
@@ -654,6 +776,16 @@ const EventProcessor = (function (){
             setAutoBottomSheetEvent();
         else
             setBottomSheetEvent();
+    }
+
+    function initSettingForSubmitSurvey(){
+        if(document.querySelector('.survey-form input[type="radio"][name="kyobolife-survey"]')===null)
+            return;
+        const submitBtn = document.querySelector('button#goNextBtn');
+        if(submitBtn===null)
+            return;
+
+        submitBtn.addEventListener('click', e=>postSurveyInput());
     }
 
     function setAutoHideGnb(){
@@ -729,32 +861,63 @@ const EventProcessor = (function (){
         [...document.querySelectorAll('[data-is-showing=processing]')].forEach(elem=>elem.dataset.isShowing='false');
     }
 
-    function postBannerExposeInfo() {
-        const url = `/journey/form/banner-expose`;
+    function postSurveyInput(surveyResultTargets){
+        surveyResultTargets = surveyResultTargets || {
+            //설문비율 텍스트 elements
+            arrSurveyResultTexts: document.querySelectorAll('.li-item-result .result-ratio'),
+            //설문비율 그래프(가로바) elements
+            arrSurveyResultBars: document.querySelectorAll('.li-item-result .painted-bar')
+        }
+        const list = [...document.querySelectorAll('.survey-form li')];
+        const checkedIndex = list.findIndex(
+            li=>li.querySelector('input[name="kyobolife-survey"]:checked')!==null
+        );
+        let checkedContents = list[checkedIndex].querySelector('.contents').textContent;
+        if(checkedContents!==null)
+            checkedContents = checkedContents.replace(/\s\s/g,'').trim();
+        const url = `/journey/form/contents-survey`;
         const sendData = {
-            kywr_name:'테스트키워드'
-            , ctts_num: _contentsId // 콘텐츠아이디
-            , expr_lctn: _isAutoBottomStyle ? '001':'002' // 자동 : 수동
-            , expr_cmdt: _isLinkToInsurance ? '001':'002' // 보험 : 부가서비스
-            , expr_cmdt_name: getLinkInfos().linkName
-            , expr_link: getLinkInfos().linkUrl
+            srch_kywr_name: _searchKeyword // 교보문고 검색키웓,
+            , csjr_ctts_num: _contentsId // 콘텐츠아이디
+            , csjr_srvy_ansr_srmb: checkedIndex // 응답 라디오 순번
+            , csjr_srvy_ansr_cntt: checkedContents // 응답 보기설문내용
         };
         postData(url, sendData, result=>{
             console.log(result);
-            _bannerHistorySeq = result.hstr_srmb;
+            result.forEach(row=>{
+                const idx = row.csjr_srvy_ansr_srmb;
+                surveyResultTargets.arrSurveyResultTexts[idx].textContent = row.csjr_ctts_srvy_rate;
+                surveyResultTargets.arrSurveyResultBars[idx].style.width = `${row.csjr_ctts_srvy_rate}%`;
+            })
+        })
+    }
+
+    function postBannerExposeInfo() {
+        const url = `/journey/form/banner-expose`;
+        const sendData = {
+            srch_kywr_name: _searchKeyword // 교보문고 검색키웓,
+            , csjr_ctts_num: _contentsId // 콘텐츠아이디
+            , bnnr_expr_mthd_dvsn_code: _isAutoBottomStyle ? '001':'002' // 자동 : 수동
+            , bnnr_expr_cmdt_kind_code: _isLinkToInsurance ? '001':'002' // 보험 : 부가서비스
+            , bnnr_expr_cmdt_name: getLinkInfos().linkName
+            , bnnr_urladrs: getLinkInfos().linkUrl
+        };
+        postData(url, sendData, result=>{
+            console.log(result);
+            _bannerHistorySeq = result.csjr_ctts_advr_expr_srmb;
         })
     }
 
     function postBannerClickInfo(href) {
         const url = `/journey/form/banner-visit`;
         const sendData = {
-            kywr_name:'테스트키워드'
-            , ctts_num: _contentsId // 콘텐츠아이디
-            , hstr_srmb: _bannerHistorySeq // 배너이력순번
-            , expr_lctn: _isAutoBottomStyle ? '001':'002' // 자동 : 수동
-            , expr_cmdt: _isLinkToInsurance ? '001':'002' // 보험 : 부가서비스
-            , expr_cmdt_name: getLinkInfos().linkName
-            , expr_link: getLinkInfos().linkUrl
+            csjr_ctts_advr_expr_srmb: _bannerHistorySeq // 배너이력순번
+            , srch_kywr_name: _searchKeyword // 교보문고 검색키웓,
+            , csjr_ctts_num: _contentsId // 콘텐츠아이디
+            , bnnr_expr_mthd_dvsn_code: _isAutoBottomStyle ? '001':'002' // 자동 : 수동
+            , bnnr_expr_cmdt_kind_code: _isLinkToInsurance ? '001':'002' // 보험 : 부가서비스
+            , bnnr_expr_cmdt_name: getLinkInfos().linkName
+            , bnnr_urladrs: getLinkInfos().linkUrl
         };
         postData(url, sendData, result=>{
             console.log(result);
@@ -763,21 +926,19 @@ const EventProcessor = (function (){
     }
 
     function setAutoBottomSheetEvent(){
-        const feedbackArea = document.querySelector('#feedback-area');
-        if(feedbackArea===null)
+        const triggerElement = document.querySelector('#feedback-area');
+        if(triggerElement===null)
             return;
-
-        let targetScrollY = feedbackArea.offsetTop;
         let prevScrollY=0;
 
         const handler = e =>{
             const hasScrolledDown = window.scrollY>prevScrollY;
             prevScrollY = window.scrollY;
             if(hasScrolledDown){
-                if(targetScrollY===0)
-                    targetScrollY = feedbackArea.offsetTop;
-                if(customerJourney._100vh*0.5 + window.scrollY > targetScrollY){
-                    scrollToEndOfFeedbackArea();    // 화면을 피드백영역 하단으로 자동 스크롤
+                const triggerRect = triggerElement.getBoundingClientRect();
+                const screenHeight = document.documentElement.clientHeight;
+                if(screenHeight*0.5 > triggerRect.top){
+                    scrollToEndOfFeedbackArea(screenHeight, triggerRect);    // 화면을 피드백영역 하단으로 자동 스크롤
                     showBottomSheet(postBannerExposeInfo); // 바텀시트 등장
                     //한번만 동작하도록 이벤츠해제
                     window.removeEventListener('scroll',handler);
@@ -786,11 +947,9 @@ const EventProcessor = (function (){
         }
         window.addEventListener('scroll',handler);
     }
-    function scrollToEndOfFeedbackArea(){
-        const feedbackArea = document.querySelector('#feedback-area');
-        const scrollValue = feedbackArea.offsetHeight - (customerJourney._100vh - (feedbackArea.offsetTop-window.scrollY))
-                            -60;
-
+    function scrollToEndOfFeedbackArea(screenHeight, triggerRect){
+        const displayingHeight = screenHeight - triggerRect.top;
+        const scrollValue = triggerRect.height - displayingHeight;
         document.body.style.transition=`margin 0.4s`;
         document.body.style.marginTop=`-${scrollValue}px`;
     }
@@ -827,24 +986,35 @@ const EventProcessor = (function (){
     function createBottomSheet() {
         const linkInfos = getLinkInfos(); //링크정보 불러오기
 
-        const bottomSheet = document.createElement('div');
-        bottomSheet.setAttribute('class', 'bottom-sheet fc-1 hide');
+        const bottomSheetWrapper = document.createElement('div');
+        bottomSheetWrapper.setAttribute('class','bottom-sheet-wrapper hide');
 
-        const headline = document.createElement('div');
-        headline.setAttribute('class', 'headline');
-
-        const titleMsg = document.createElement('h4');
-        titleMsg.setAttribute('class', 'fw-700');
-        titleMsg.textContent = '이런 상품 어떠세요?'
+        const closeBtnArea = document.createElement('div');
+        closeBtnArea.setAttribute('class','bottom-sheet-close-btn-area');
 
         const closeBtn = document.createElement('a');
+        closeBtn.setAttribute('class','close-btn')
 
         const closeBtnMsg = document.createElement('span');
         closeBtnMsg.style.display='none';
         closeBtnMsg.textContent = '닫기';
 
         const closeBtnImg = document.createElement('img');
-        closeBtnImg.setAttribute('src', '/resources/v1/img/ico-30-svg-close-b.svg');
+        closeBtnImg.setAttribute('src', '/resources/v1/img/ico-30-svg-close-w.svg');
+
+        const bottomSheet = document.createElement('div');
+        bottomSheet.setAttribute('class', 'bottom-sheet fc-1');
+
+        const headline = document.createElement('div');
+        headline.setAttribute('class', 'headline');
+
+        const ci = document.createElement('img');
+        ci.setAttribute('src','/resources/v1/img/img-ci-kyobo.png');
+        ci.setAttribute('width','80');
+
+        const titleMsg = document.createElement('h4');
+        titleMsg.setAttribute('class', 'fw-700');
+        titleMsg.textContent = '이런 상품 어떠세요?'
 
         const recommendBox = document.createElement('div');
         recommendBox.setAttribute('class', 'recommend-product text-align-center');
@@ -874,15 +1044,18 @@ const EventProcessor = (function (){
         const arrowImg = document.createElement('img');
         arrowImg.setAttribute('src', '/resources/v1/img/ico-12-arrow-g.svg');
 
-        //bottomsheet 타이틀 생성
+        //닫기버튼 만들기
         closeBtn.appendChild(closeBtnMsg);
         closeBtn.appendChild(closeBtnImg);
         closeBtn.addEventListener('click', e => {
             e.preventDefault();
             closeBottomSheet();
-        })
+        });
+        closeBtnArea.appendChild(closeBtn);
+
+        //bottomsheet 타이틀 생성
         headline.appendChild(titleMsg);
-        headline.appendChild(closeBtn);
+        headline.appendChild(ci);
 
         //상품추천내용 생성
         recommendBox.appendChild(recommendImg);
@@ -896,16 +1069,20 @@ const EventProcessor = (function (){
         bottomSheet.appendChild(headline);
         bottomSheet.appendChild(recommendBox);
         bottomSheet.appendChild(kyoboLink);
-        bottomSheet.addEventListener('transitionend', () => {
+
+        //bottom sheet wrapper
+        bottomSheetWrapper.appendChild(closeBtnArea);
+        bottomSheetWrapper.appendChild(bottomSheet);
+        bottomSheetWrapper.addEventListener('transitionend', () => {
             //scroll 잠그기
             handleScrollLock();
         });
 
-        document.body.appendChild(bottomSheet);
+        document.body.appendChild(bottomSheetWrapper);
     }
 
     function showBottomSheet(callBackFunc) {
-        const bottomSheet = document.querySelector(".bottom-sheet");
+        const bottomSheet = document.querySelector(".bottom-sheet-wrapper");
         if(bottomSheet===null || !bottomSheet.classList.contains('hide'))
             return;
 
@@ -923,14 +1100,14 @@ const EventProcessor = (function (){
         }
     }
     function closeBottomSheet(){
-        if(document.querySelector(".bottom-sheet")===null)
+        if(document.querySelector(".bottom-sheet-wrapper")===null)
             return;
 
         // 자동스크롤(TranslateY)된 Body(배경) 요소 복구
         // transformedElem.style.transform=`translate(${orgTranslateX}px, ${orgTranslateY}px)`;
         document.body.style.marginTop='';
 
-        const bottomSheet = document.querySelector(".bottom-sheet");
+        const bottomSheet = document.querySelector(".bottom-sheet-wrapper");
         bottomSheet.addEventListener('transitionend',()=> {
             if(bottomSheet.classList.contains('hide'))
                 document.querySelector('.dimmed').remove();
@@ -1002,9 +1179,9 @@ const EventProcessor = (function (){
     function postReview(value){
         const url = `/journey/form/contents-review`;
         const sendData = {
-            kywr_name:'테스트키워드'
-            , ctts_num: _contentsId
-            , ctts_vltn_wrth: value
+            srch_kywr_name: _searchKeyword
+            , csjr_ctts_num: _contentsId
+            , csjr_ctts_vltn_dvsn_code: value
         };
         postData(url, sendData, result=>{console.log(result)})
     }
@@ -1080,6 +1257,7 @@ const EventProcessor = (function (){
         }
         _setPropertiesForCss();
         window.addEventListener('resize',_setPropertiesForCss);
+        window.addEventListener('resize',()=>customerJourney.set100vh(document.documentElement.clientHeight));
     }
     return {setAutoHideGnb, setGoNextAndFirstBtn, isAutoBottomStyle, setAutoBottomSheetEvent
         , setBottomSheetEvent, setPropertiesForCss, getResultOfSurvey, togglePageContents
