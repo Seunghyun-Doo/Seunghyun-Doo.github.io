@@ -101,7 +101,12 @@
         <img src="resources/v1/banner/13G_029.png" width="300" class="mt-10 mb-25"/>
     </a>
 </div>
-
+<script>
+    const v = Date.now().toString(36);
+   [... document.querySelectorAll('a')].forEach(
+       a=>a.href=`${a.href}?v=${v}`
+   );
+</script>
 </body>
 
 </html>
