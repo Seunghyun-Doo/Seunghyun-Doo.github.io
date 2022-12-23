@@ -10,6 +10,7 @@
     <title>건강검진 받기 전, 꼭 챙겨야 할 사항은?</title>
 </head>
 <body class="_7D_003 survey-type bg-6">
+<!--gnb(헤더 - 뒤로가기)-->
 <nav class="bg-white">
     <a href="javascript:history.back()" class="go-back-btn">
         <img src="/resources/v1/img/ico-kyobobook-gnb-back.svg">
@@ -19,6 +20,9 @@
     </div>
     <div></div>
 </nav>
+    <!--서버로부터 전달받는 변수영역-->
+    <input type="hidden" id="srch_kywr_name" class="srch_kywr_name" th:value="${srch_kywr_name}" />
+    <input type="hidden" id="csjr_ctts_num" class="csjr_ctts_num" th:value="${csjr_ctts_num}" />
     <div class="main-wrapper">
         <header>
             <div id="survey-area">
@@ -77,7 +81,7 @@
                                 <input type="radio" name="kyobolife-survey" value="01" id="answer-01">
                                 <label for="answer-01">
                                     <div class="radio-btn bdc-5"></div>
-                                    <div class="fs-5">
+                                    <div class="fs-5 contents">
                                         <small class="fc-4">2년 전 검진결과 확인하고,</small>
                                         <div class="mt-5">적절한 검진항목 선택하기</div>
                                     </div>
@@ -93,7 +97,7 @@
                                     </div>
                                 </div>
                                 <div class="text-align-right">
-                                    <h1 class="display-inline-block result-ratio">24</h1>
+                                    <h1 class="display-inline-block result-ratio">-</h1>
                                     <span>%</span>
                                 </div>
                             </div>
@@ -110,7 +114,7 @@
                                 <input type="radio" name="kyobolife-survey" value="02" id="answer-02">
                                 <label for="answer-02">
                                     <div class="radio-btn bdc-5"></div>
-                                    <div class="fs-5">
+                                    <div class="fs-5 contents">
                                         <small class="fc-4">검진결과에 따라</small>
                                         <div class="mt-5">어떤 보험금을 받을 수 있는지<br>확인해보기</div>
                                     </div>
@@ -126,7 +130,7 @@
                                     </div>
                                 </div>
                                 <div class="text-align-right">
-                                    <h1 class="display-inline-block result-ratio">16</h1>
+                                    <h1 class="display-inline-block result-ratio">-</h1>
                                     <span>%</span>
                                 </div>
                             </div>
@@ -286,13 +290,13 @@
             <article class="text-align-center fc-white">
                 <h3 class="fw-700 text-align-left fc-white">콘텐츠에 대해 평가해주세요.</h3>
                 <div class="feedback-btn-box mt-10 text-align-center">
-                    <input type="radio" name="feedback-radio" id="feedback-radio-01" value="01">
+                    <input type="radio" name="feedback-radio" id="feedback-radio-01" value="001">
                     <label class="feedback-btn" for="feedback-radio-01">
                         <img src="/resources/v1/img/ico-60-feedback-good-active.svg" width="60">
                         <div class="feedback-msg mt-10 fw-700">완전 좋았어요!</div>
                     </label>
                     <div class="vertical-line mb-15"></div>
-                    <input type="radio" name="feedback-radio" id="feedback-radio-02" value="02">
+                    <input type="radio" name="feedback-radio" id="feedback-radio-02" value="002">
                     <label class="feedback-btn" for="feedback-radio-02">
                         <img src="/resources/v1/img/ico-60-feedback-bad-active.svg" width="60">
                         <div class="feedback-msg mt-10 fw-700">그저 그랬어요...</div>
@@ -349,13 +353,6 @@
                 //부가서비스 설명
                 explain : '꼭 필요한 것만 담은 똑똑한 건강가이드'
             }
-        });
-
-        //설문조사 결과 조회
-        EventProcessor.getResultOfSurvey('7D_003', json=>{
-            const arr=json.arr;
-            document.querySelectorAll('.painted-bar').forEach((div,idx)=>div.style.width=`${arr[idx]}%`);
-            document.querySelectorAll('.result-ratio').forEach((h1,idx)=>h1.textContent=arr[idx]+'');
         });
 
         [...document.querySelectorAll('.survey-form input[type="radio"]')].forEach(elem=>

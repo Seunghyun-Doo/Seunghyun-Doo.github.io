@@ -10,15 +10,19 @@
     <title>건강검진 결과 누가 보험금을 받을까?</title>
 </head>
 <body class="survey-type bg-6">
-<nav class="bg-white">
-    <a href="javascript:history.back()" class="go-back-btn">
-        <img src="/resources/v1/img/ico-kyobobook-gnb-back.svg">
-    </a>
-    <div>
-        건강검진 결과 보험금을 받을 수 있는 사람은?
-    </div>
-    <div></div>
-</nav>
+    <!--gnb(헤더 - 뒤로가기)-->
+    <nav class="bg-white">
+        <a href="javascript:history.back()" class="go-back-btn">
+            <img src="/resources/v1/img/ico-kyobobook-gnb-back.svg">
+        </a>
+        <div>
+            건강검진 결과 보험금을 받을 수 있는 사람은?
+        </div>
+        <div></div>
+    </nav>
+    <!--서버로부터 전달받는 변수영역-->
+    <input type="hidden" id="srch_kywr_name" class="srch_kywr_name" th:value="${srch_kywr_name}" />
+    <input type="hidden" id="csjr_ctts_num" class="csjr_ctts_num" th:value="${csjr_ctts_num}" />
 <div class="main-wrapper">
     <header>
         <div id="survey-area" data-is-showing="true">
@@ -305,13 +309,13 @@
         <article class="text-align-center fc-white">
             <h3 class="fw-700 text-align-left fc-white">콘텐츠에 대해 평가해주세요.</h3>
             <div class="feedback-btn-box mt-10 text-align-center">
-                <input type="radio" name="feedback-radio" id="feedback-radio-01" value="01">
+                <input type="radio" name="feedback-radio" id="feedback-radio-01" value="001">
                 <label class="feedback-btn" for="feedback-radio-01">
                     <img src="/resources/v1/img/ico-60-feedback-good-active.svg" width="60">
                     <div class="feedback-msg mt-10 fw-700">완전 좋았어요!</div>
                 </label>
                 <div class="vertical-line mb-15"></div>
-                <input type="radio" name="feedback-radio" id="feedback-radio-02" value="02">
+                <input type="radio" name="feedback-radio" id="feedback-radio-02" value="002">
                 <label class="feedback-btn" for="feedback-radio-02">
                     <img src="/resources/v1/img/ico-60-feedback-bad-active.svg" width="60">
                     <div class="feedback-msg mt-10 fw-700">그저 그랬어요...</div>
