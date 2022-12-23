@@ -1019,6 +1019,12 @@ const EventProcessor = (function (){
         const recommendBox = document.createElement('div');
         recommendBox.setAttribute('class', 'recommend-product text-align-center');
 
+        const bannerBox = document.createElement('div');
+        bannerBox.setAttribute('class', 'banner-box text-align-center mt-10 fs-0');
+
+        const bgCircle = document.createElement('div');
+        bgCircle.setAttribute('class', 'bg-circle hide');
+
         const recommendImg = document.createElement('img');
         recommendImg.setAttribute('src', linkInfos.linkImg);
         recommendImg.setAttribute('width', '80');
@@ -1058,7 +1064,9 @@ const EventProcessor = (function (){
         headline.appendChild(ci);
 
         //상품추천내용 생성
-        recommendBox.appendChild(recommendImg);
+        bannerBox.appendChild(bgCircle);
+        bannerBox.appendChild(recommendImg);
+        recommendBox.appendChild(bannerBox);
         recommendBox.appendChild(recommendName);
         recommendBox.appendChild(recommendExplain);
 
@@ -1074,6 +1082,8 @@ const EventProcessor = (function (){
         bottomSheetWrapper.appendChild(closeBtnArea);
         bottomSheetWrapper.appendChild(bottomSheet);
         bottomSheetWrapper.addEventListener('transitionend', () => {
+            //상품이미지 배경(원) 애니메이션
+            bgCircle.classList.toggle('hide');
             //scroll 잠그기
             handleScrollLock();
         });
