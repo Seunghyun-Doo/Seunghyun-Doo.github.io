@@ -1528,7 +1528,7 @@ input[type='radio'][name='feedback-radio']:checked+.feedback-btn{
     width: 36px;
     height: 36px;
     padding: 6px;
-    background: rgba(0,0,0,.5);
+    background: rgba(0,0,0,.35);
     border-radius: 50%;
 }
 .close-btn img{
@@ -1556,6 +1556,34 @@ input[type='radio'][name='feedback-radio']:checked+.feedback-btn{
 }
 .recommend-product{
     border-bottom: 1px solid #eee;
+}
+.recommend-product .banner-box{
+    height: 85px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.recommend-product .banner-box .bg-circle {
+    width: 70px;
+    height: 70px;
+    background: #ffc047;
+    opacity: 0.3;
+    display: inline-block;
+    border-radius: 50%;
+    transition-property: width,height;
+    transition-duration: 0.5s;
+    transform: translateY(-10px);
+}
+.recommend-product .banner-box .bg-circle.hide{
+    width: 0;
+    height: 0;
+}
+.recommend-product .banner-box img {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
 }
 .bottom-sheet a{
     display: flex;
