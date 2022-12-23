@@ -305,12 +305,12 @@ const customerJourney=(function (){
                    return window.scrollY+(_100vh*this.triggerHook) > this.triggerElementOffsetTop();
                }
                , isInPlayingArea() {
-                   const startPoint = window.scrollY+(_100vh*this.triggerHook);
-                   const redrawAreaStartPoint = (this.triggerElementOffsetTop() - (_100vh * 0.2))
-                   const redrawAreaEndPoint = Math.min((this.triggerElementOffsetTop() + this.scrollDuration + (_100vh * 0.2))
-                       , window.scrollY+_100vh);
-                   return startPoint > redrawAreaStartPoint
-                       && startPoint < redrawAreaEndPoint;
+                    const targetRect = this.targetElement.getBoundingClientRect();
+                    const animationStartPoint = this.triggerHook*_100vh;
+                    const animationEndPoint = animationStartPoint - this.scrollDuration;
+
+                   return animationStartPoint >= targetRect.top
+                       && animationEndPoint <= targetRect.top;
                }
                , getProgress() {
                    let progress = 0;
