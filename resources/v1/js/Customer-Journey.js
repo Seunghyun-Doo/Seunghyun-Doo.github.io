@@ -117,6 +117,8 @@ const customerJourney=(function (){
     let customFunctionList = [];
 
     let calculation = new Calculation();
+    let playEndTime = Date.now();
+    let tmp=0;
 
    function loadElementsToAnimate(onScroll){
       const aniElems = [...document.querySelectorAll('*')].filter(elem=>{
@@ -190,12 +192,15 @@ const customerJourney=(function (){
            }
        });
 
-       window.addEventListener('scroll',testOuter);
-       onScrollProcessor();
+       window.addEventListener('scroll',()=>onScrollProcessor(true));
+       onScrollProcessor(false);
        history.scrollRestoration='manual';
    }
 
-   function onScrollProcessor(){
+   function onScrollProcessor(bLoop){
+       if(Date.now()>playEndTime)
+           playEndTime = Date.now() + 1000;
+
        onScrollAnimationInfos.filter(e=>e.isInPlayingArea()).forEach(animationsInfo=>{
            if(animationsInfo.stylePropsAfter!==undefined){
                animationsInfo.stylePropsAfter.props.forEach(prop => {
@@ -212,6 +217,9 @@ const customerJourney=(function (){
                });
            }
        });
+       if(bLoop && Date.now()<playEndTime)
+           requestAnimationFrame(()=>onScrollProcessor(true));
+
 
        function getAnimatedDigitValue(animationsInfo, propNm, progress){
            const {stylePropsBefore, stylePropsAfter} = animationsInfo;
@@ -301,23 +309,24 @@ const customerJourney=(function (){
                , removeClassNm
                , triggerElement
                , triggerHook
-               , isTriggered() {
-                   return window.scrollY+(_100vh*this.triggerHook) > this.triggerElementOffsetTop();
+               , getBoundingClientRect(){
+                    return this.targetElement.getBoundingClientRect();
+               }
+               , isTriggered(targetRect) {
+                   targetRect = targetRect || this.getBoundingClientRect();
+                   return _100vh*this.triggerHook > targetRect.top;
                }
                , isInPlayingArea() {
-                    const targetRect = this.targetElement.getBoundingClientRect();
-                    const animationStartPoint = this.triggerHook*_100vh;
-                    const animationEndPoint = animationStartPoint - this.scrollDuration;
-
-                   return animationStartPoint >= targetRect.top
-                       && animationEndPoint <= targetRect.top;
+                    const targetRect = this.getBoundingClientRect();
+                   return 0 <= targetRect.top && _100vh >= targetRect.top;
                }
                , getProgress() {
                    let progress = 0;
-                   if(!this.isTriggered())
+                   const targetRect = this.getBoundingClientRect();
+                   if(!this.isTriggered(targetRect))
                        return progress;
 
-                   const curr = this.triggerElementOffsetTop()-window.scrollY;
+                   const curr = targetRect.top;
                    const target = _100vh*triggerHook-this.scrollDuration;
                    return Math.min(1 + Math.round((target-curr)/scrollDuration*100)/100,1);
                }
