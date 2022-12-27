@@ -1013,6 +1013,7 @@ const EventProcessor = (function (){
 
     function createBottomSheet() {
         const linkInfos = getLinkInfos(); //링크정보 불러오기
+        const effectImgUrl = '/resources/v1/img/img-product-effect.gif';
 
         const bottomSheetWrapper = document.createElement('div');
         bottomSheetWrapper.setAttribute('class','bottom-sheet-wrapper hide');
@@ -1058,6 +1059,11 @@ const EventProcessor = (function (){
         recommendImg.setAttribute('width', '80');
         recommendImg.setAttribute('class', 'mt-10');
 
+        const effectImg = document.createElement('img');
+        effectImg.setAttribute('src', effectImgUrl);
+        effectImg.setAttribute('width', '90');
+        effectImg.setAttribute('class', 'mt-10');
+
         const recommendName = document.createElement('h4');
         recommendName.setAttribute('class', 'mt-10 fw-700');
         recommendName.textContent = linkInfos.linkName;
@@ -1094,6 +1100,7 @@ const EventProcessor = (function (){
         //상품추천내용 생성
         bannerBox.appendChild(bgCircle);
         bannerBox.appendChild(recommendImg);
+        bannerBox.appendChild(effectImg);
         recommendBox.appendChild(bannerBox);
         recommendBox.appendChild(recommendName);
         recommendBox.appendChild(recommendExplain);
@@ -1224,6 +1231,7 @@ const EventProcessor = (function (){
             srch_kywr_name: _searchKeyword
             , csjr_ctts_num: _contentsId
             , csjr_ctts_vltn_dvsn_code: value
+            , terml_cnct_param_wrth: _userKey
         };
         postData(url, sendData, result=>{console.log(result)})
     }
