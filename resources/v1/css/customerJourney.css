@@ -1540,7 +1540,7 @@ input[type='radio'][name='feedback-radio']:checked+.feedback-btn{
 }
 .bottom-sheet{
     background: white;
-    padding: 25px 25px 45px;
+    padding: 25px 25px 10px;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
 }
