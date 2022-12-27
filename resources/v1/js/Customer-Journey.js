@@ -762,7 +762,7 @@ const EventProcessor = (function (){
         createUserKey(); //user key 생성
         setPropertiesForCss(); //css 전역변수 설정
         initSettingForReviewRadio(params.contentsId); //피드백라디오(좋아요/싫어요) 기본이벤트처리
-        setAutoHideGnb(); //gnb(헤더) 자동 숨기기 설정
+        setAutoHideElements(); //gnb(헤더) 자동 숨기기 설정
         initSettingForSubmitSurvey();
 
         //bottom-sheet 추천상품정보 설정
@@ -797,7 +797,11 @@ const EventProcessor = (function (){
         submitBtn.addEventListener('click', e=>postSurveyInput());
     }
 
-    function setAutoHideGnb(){
+    function setAutoHideElements(hideTargets){
+        hideTargets = hideTargets || [
+            document.querySelector('nav'),
+            document.querySelector('#goFirstBtn')
+        ];
         let isShowing = true;
         let prevScrollY = 0;
         let firstScrollY;
@@ -809,8 +813,13 @@ const EventProcessor = (function (){
 
         window.addEventListener('scroll',e=>{
             let isScrollingDown = window.scrollY>prevScrollY;
-            if(!isScrollingDown && gnb.classList.contains('hide') && window.scrollY===0)
-                gnb.classList.remove('hide');
+            //화면 스크롤이 가장 위인 경우, 위로 스크롤하면 바로 등장
+            if(!isScrollingDown && window.scrollY===0) {
+                for(let target of hideTargets) {
+                    if(target!==null && target.classList.contains('hide'))
+                        target.elem.classList.remove('hide');
+                }
+            }
             else if(isShowing && isScrollingDown || !isShowing && !isScrollingDown){
                 let hasChangedDirection = isScrollingDown^prevScrolledDown;
                 prevScrolledDown = isScrollingDown;
@@ -820,11 +829,16 @@ const EventProcessor = (function (){
                 }
                 if(Math.abs(window.scrollY-firstScrollY)>scrollYValue){
                     isShowing = !isShowing;
-                    gnb.classList.toggle('hide');
+                    for(let target of hideTargets) {
+                        if(isShowing)
+                            target.classList.remove('hide');
+                        else
+                            target.classList.add('hide');
+                    }
                 }
             }
             prevScrollY = window.scrollY;
-        })
+        });
     }
     function createUserKey(){
         let userKey = getLocalStorage('user-key', true);
@@ -980,9 +994,14 @@ const EventProcessor = (function (){
         return {linkUrl, linkImg, linkName, linkExplain};
     }
 
-    function handleScrollLock() {
-        document.documentElement.classList.toggle('overflow-y-hidden');
-        document.body.classList.toggle('overflow-y-hidden');
+    function handleScrollLock(bLock) {
+        if(bLock) {
+            document.documentElement.classList.add('overflow-y-hidden');
+            document.body.classList.add('overflow-y-hidden');
+        }else{
+            document.documentElement.classList.remove('overflow-y-hidden');
+            document.body.classList.remove('overflow-y-hidden');
+        }
         // document.querySelector('.main-wrapper').classList.toggle('overflow-y-hidden');
     }
 
@@ -1094,7 +1113,8 @@ const EventProcessor = (function (){
             //상품이미지 배경(원) 애니메이션
             bgCircle.classList.toggle('hide');
             //scroll 잠그기
-            handleScrollLock();
+            if(bottomSheetWrapper.classList.contains('hide'))
+                handleScrollLock(false);
         });
 
         document.body.appendChild(bottomSheetWrapper);
@@ -1107,6 +1127,8 @@ const EventProcessor = (function (){
 
         //dimmed screen 생성
         createDimmedScreen();
+        //scroll Lock
+        handleScrollLock(true);
         //bottom-sheet 숨기기 해제
         window.setTimeout(()=>bottomSheet.classList.toggle('hide')
             ,100);
@@ -1128,8 +1150,9 @@ const EventProcessor = (function (){
 
         const bottomSheet = document.querySelector(".bottom-sheet-wrapper");
         bottomSheet.addEventListener('transitionend',()=> {
-            if(bottomSheet.classList.contains('hide'))
-                document.querySelector('.dimmed').remove();
+            const dimmed = document.querySelector('.dimmed');
+            if(bottomSheet.classList.contains('hide') && dimmed!==null)
+                dimmed.remove();
         });
         bottomSheet.classList.toggle('hide');
     }
@@ -1278,7 +1301,7 @@ const EventProcessor = (function (){
         window.addEventListener('resize',_setPropertiesForCss);
         window.addEventListener('resize',()=>customerJourney.set100vh(document.documentElement.clientHeight));
     }
-    return {setAutoHideGnb, setGoNextAndFirstBtn, isAutoBottomStyle, setAutoBottomSheetEvent
+    return {setGoNextAndFirstBtn, isAutoBottomStyle, setAutoBottomSheetEvent
         , setBottomSheetEvent, setPropertiesForCss, getResultOfSurvey, togglePageContents
         , initSetting}
 })();

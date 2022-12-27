@@ -1460,6 +1460,9 @@ section .title-msg .section-no.center-style{
     margin-bottom: 35px;
     box-shadow: 1px 2px 2px #00000033;
 }
+#goFirstBtn.hide{
+    display: none;
+}
 ._6F_007 #feedback-area{
     background: #2ea1b1;
 }
