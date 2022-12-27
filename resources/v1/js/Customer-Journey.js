@@ -275,7 +275,7 @@ const customerJourney=(function (){
                'start-ms': startMs,
                'transition-duration': transitionDuration = '0.3s', 'transition-props': props,
                'add-class-nm': addClassNm, 'remove-class-nm': removeClassNm,
-               'trigger-element': triggerElement, 'trigger-hook': triggerHook = 0.75,
+               'trigger-element': triggerElement, 'trigger-hook': triggerHook = 0.85,
                'onscroll-declared-animation-types': onScrollDeclaredAnimationTypes,
                'scroll-duration': scrollDuration = 200
            } = info;
