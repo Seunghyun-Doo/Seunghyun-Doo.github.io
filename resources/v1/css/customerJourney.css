@@ -857,7 +857,8 @@ section:last-of-type article{
     display: inline-block;
     border-radius: 3px;
 }
-._6F_007 .tag{
+._6F_007 .tag,
+._3A_024 .tag{
     color: #166c78;
 }
 ._2D_015 .tag{
@@ -927,6 +928,7 @@ section:last-of-type article{
     flex-direction: row;
     padding-bottom: 10px;
 }
+._6F_007 .radio-btn-box h3,
 ._6F_007 .radio-btn-box h4{
     color: #105e69;
 }
